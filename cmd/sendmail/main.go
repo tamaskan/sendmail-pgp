@@ -4,11 +4,15 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"crypto/md5"
+	"encoding/hex"
 	"flag"
 	"io"
+	"io/ioutil"
 	"os"
 	"strings"
 
+	"github.com/ProtonMail/gopenpgp/v2/helper"
 	"github.com/n0madic/sendmail"
 	log "github.com/sirupsen/logrus"
 )
@@ -95,6 +99,34 @@ func main() {
 				break
 			}
 			body = append(body, line...)
+
+
+			var pgprecipients = string(flag.Args()[0])
+			hasher := md5.New()
+    		hasher.Write([]byte(pgprecipients))
+			stringhash := hex.EncodeToString(hasher.Sum(nil))
+			dat, err := os.ReadFile("/keys/"+stringhash+".pgp")
+			
+			if os.IsNotExist(err) {
+				log.Debug(err)
+				log.Debug("/keys/"+stringhash)
+			} else {
+				b, err := ioutil.ReadFile("/keys/"+stringhash+".config")
+    			if err != nil {
+        			log.Debug(err)
+    			}else{
+					s := string(b)
+					strings.Contains(s, subject)
+				}
+
+				text := string(dat)
+				var pubkey = text
+				armor, err := helper.EncryptMessageArmored(pubkey, string(body))
+				if(err != nil){log.Fatal(err)}
+				log.Debug(armor)
+				body = []byte(armor)
+			}
+
 		}
 		if len(body) == 0 {
 			log.Fatal("Empty message body")
