@@ -100,31 +100,31 @@ func main() {
 			}
 			body = append(body, line...)
 
+			if (strings.Count(strings.Join(flag.Args(),""), "@") > 1){
+				log.Debug("Multiple Recipients detected")
+				log.Debug(strings.Join(flag.Args(),""))
+			}
 
 			var pgprecipients = string(flag.Args()[0])
-			hasher := md5.New()
-    		hasher.Write([]byte(pgprecipients))
-			stringhash := hex.EncodeToString(hasher.Sum(nil))
-			dat, err := os.ReadFile("/keys/"+stringhash+".pgp")
+
+			var stringhash = hasher(pgprecipients)
+
+			pgpdata, err := os.ReadFile("/keys/"+stringhash+".pgp")
 			
 			if os.IsNotExist(err) {
 				log.Debug(err)
 				log.Debug("/keys/"+stringhash)
 			} else {
-				b, err := ioutil.ReadFile("/keys/"+stringhash+".config")
-    			if err != nil {
-        			log.Debug(err)
+				configdata, err := ioutil.ReadFile("/keys/"+stringhash+".config")
+    			if os.IsNotExist(err) {
+        			log.Debug("Config file "+stringhash+".config not found, encrypting everything")
+					body = encrypter(pgpdata,body)
     			}else{
-					s := string(b)
-					strings.Contains(s, subject)
+					if strings.Contains(string(configdata), subject){
+						body = encrypter(pgpdata,body)
+					}
 				}
 
-				text := string(dat)
-				var pubkey = text
-				armor, err := helper.EncryptMessageArmored(pubkey, string(body))
-				if(err != nil){log.Fatal(err)}
-				log.Debug(armor)
-				body = []byte(armor)
 			}
 
 		}
@@ -159,6 +159,21 @@ func main() {
 			}
 		}
 	}
+}
+
+func hasher(pgprecipients string) string{
+	hasher := md5.New()
+    hasher.Write([]byte(pgprecipients))
+	stringhash := hex.EncodeToString(hasher.Sum(nil))
+	return stringhash
+}
+
+func encrypter(pgpdata []byte,body []byte) []byte{
+	armor, err := helper.EncryptMessageArmored(string(pgpdata), string(body))
+	if(err != nil){log.Fatal(err)}
+	log.Debug(armor)
+	body = []byte(armor)
+	return body
 }
 
 func getLogFields(fields sendmail.Fields) log.Fields {

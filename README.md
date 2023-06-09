@@ -11,3 +11,7 @@ export SENDMAIL_SMART_HOST=smtp.gmail.com:587
 export SENDMAIL_SMART_LOGIN=test@gmail.com
 
 export SENDMAIL_SMART_PASSWORD=password
+
+or
+
+equivalent docker container env
