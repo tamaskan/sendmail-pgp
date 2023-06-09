@@ -112,19 +112,17 @@ func main() {
 			pgpdata, err := os.ReadFile("/keys/"+stringhash+".pgp")
 			
 			if os.IsNotExist(err) {
-				log.Debug(err)
-				log.Debug("/keys/"+stringhash)
+				log.Debug("no /keys/"+stringhash+".pgp found, skipping encryption")
 			} else {
 				configdata, err := ioutil.ReadFile("/keys/"+stringhash+".config")
     			if os.IsNotExist(err) {
-        			log.Debug("Config file "+stringhash+".config not found, encrypting everything")
+        			log.Debug("Config file /keys/"+stringhash+".config not found, encrypting everything")
 					body = encrypter(pgpdata,body)
     			}else{
 					if strings.Contains(string(configdata), subject){
 						body = encrypter(pgpdata,body)
 					}
 				}
-
 			}
 
 		}
