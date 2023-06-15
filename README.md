@@ -2,16 +2,18 @@ Combines n0madic/sendmail and ProtonMail/gopenpgp
 
 go build in sendmail/cmd-folder
 
-needs a /keys-folder with a [md5-hash-email].pgp and a [md5-hash-email].config file that contains the wording of the subject to enable encryption
+needs a /keys-folder with a [md5-hash-email].pgp and optionally a [md5-hash-email].config file that contains the wording of the subject to enable encryption
 
-needs eg.
+needs docker env eg.
 
-export SENDMAIL_SMART_HOST=smtp.gmail.com:587
+SENDMAIL_SMART_HOST=smtp.gmail.com
 
-export SENDMAIL_SMART_LOGIN=test@gmail.com
+SENDMAIL_SMART_PORT=587
 
-export SENDMAIL_SMART_PASSWORD=password
+SENDMAIL_SMART_LOGIN=test@gmail.com
 
-or
+SENDMAIL_SMART_PASSWORD=password
 
-equivalent docker container env
+SENDMAIL_SECRET=the password of your private pgp-file (if you don't want to expose it, change line 187 in cmd\sendmail\main.go)
+
+if /keys/[md5-hash-email].privpgp of the sender exists, messages are signed and encrypted with obfuscated subject

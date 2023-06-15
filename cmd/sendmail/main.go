@@ -100,42 +100,46 @@ func main() {
 			}
 			body = append(body, line...)
 
-			if (strings.Count(strings.Join(flag.Args(),""), "@") > 1){
-				log.Debug("Multiple Recipients detected")
-				log.Debug(strings.Join(flag.Args(),""))
-			}
+		}
 
-			var pgprecipients = string(flag.Args()[0])
+		if (strings.Count(strings.Join(flag.Args(),""), "@") > 1){
+			log.Debug("Multiple Recipients detected")
+			log.Debug(strings.Join(flag.Args(),""))
+		}
 
-			var stringhash = hasher(pgprecipients)
+		var pgprecipients = string(flag.Args()[0])
 
-			pgpdata, err := os.ReadFile("/keys/"+stringhash+".pgp")
-			
+		var stringhash = hasher(pgprecipients)
+
+		pgpdata, err := os.ReadFile("/keys/"+stringhash+".pgp")
+		
+		if os.IsNotExist(err) {
+			print("no /keys/"+stringhash+".pgp found, skipping encryption")
+		} else {
+			subject = "..."
+			configdata, err := ioutil.ReadFile("/keys/"+stringhash+".config")
 			if os.IsNotExist(err) {
-				log.Debug("no /keys/"+stringhash+".pgp found, skipping encryption")
-			} else {
-				configdata, err := ioutil.ReadFile("/keys/"+stringhash+".config")
-    			if os.IsNotExist(err) {
-        			log.Debug("Config file /keys/"+stringhash+".config not found, encrypting everything")
+				print("Config file /keys/"+stringhash+".config not found, encrypting everything\r\n")
+				body = encrypter(pgpdata,body)
+			}else{
+				if strings.Contains(string(configdata), subject){
 					body = encrypter(pgpdata,body)
-    			}else{
-					if strings.Contains(string(configdata), subject){
-						body = encrypter(pgpdata,body)
-					}
+					print("Subject found, encrypting\r\n")
 				}
 			}
-
 		}
+
 		if len(body) == 0 {
 			log.Fatal("Empty message body")
 		}
 
 		envelope, err := sendmail.NewEnvelope(&sendmail.Config{
-			Sender:     sender,
+			Sender:     os.Getenv("SENDMAIL_SMART_LOGIN"),
 			Recipients: flag.Args(),
 			Subject:    subject,
 			Body:       body,
 		})
+
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -167,11 +171,26 @@ func hasher(pgprecipients string) string{
 }
 
 func encrypter(pgpdata []byte,body []byte) []byte{
-	armor, err := helper.EncryptMessageArmored(string(pgpdata), string(body))
-	if(err != nil){log.Fatal(err)}
-	log.Debug(armor)
-	body = []byte(armor)
-	return body
+	
+	var sender = hasher(os.Getenv("SENDMAIL_SMART_LOGIN"))
+
+	privkey, err := os.ReadFile("/keys/"+sender+".privpgp")
+	if os.IsNotExist(err) {
+		print("no /keys/"+sender+".privpgp found, skipping signing\r\n")
+		armor, err := helper.EncryptMessageArmored(string(pgpdata), string(body))
+		if(err != nil){log.Fatal(err)}
+		log.Debug(armor)
+		body = []byte(armor)
+		return body
+	} else {
+		print("/keys/"+sender+".privpgp found, signing message\r\n")
+		armor, err := helper.EncryptSignMessageArmored(string(pgpdata),string(privkey),[]byte(os.Getenv("SENDMAIL_SECRET")), string(body))
+		if(err != nil){log.Fatal(err)}
+		log.Debug(armor)
+		body = []byte(armor)
+		return body
+	}
+	
 }
 
 func getLogFields(fields sendmail.Fields) log.Fields {

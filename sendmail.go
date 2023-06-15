@@ -3,7 +3,6 @@ package sendmail
 
 import (
 	"bytes"
-	"encoding/base64"
 	"errors"
 	"net/mail"
 	"os"
@@ -38,7 +37,7 @@ func NewEnvelope(config *Config) (Envelope, error) {
 	msg, err := mail.ReadMessage(bytes.NewReader(config.Body))
 	if err != nil {
 		if len(config.Recipients) > 0 {
-			msg, err = GetDumbMessage(config.Sender, config.Recipients, config.Body)
+			msg, err = GetDumbMessage(config.Sender, config.Recipients,config.Subject, config.Body)
 		}
 		if err != nil {
 			return Envelope{}, err
@@ -66,7 +65,7 @@ func NewEnvelope(config *Config) (Envelope, error) {
 	}
 
 	if config.Subject != "" {
-		msg.Header["Subject"] = []string{"=?UTF-8?B?" + base64.StdEncoding.EncodeToString([]byte(config.Subject))}
+		msg.Header["Subject"] = []string{config.Subject}
 	}
 
 	var recipients []string
@@ -107,7 +106,7 @@ func NewEnvelope(config *Config) (Envelope, error) {
 // It returns channel for results of send.
 // After the end of sending channel are closed.
 func (e *Envelope) Send() <-chan Result {
-	smartHost := os.Getenv("SENDMAIL_SMART_HOST")
+	smartHost := os.Getenv("SENDMAIL_SMART_HOST")+":"+os.Getenv("SENDMAIL_SMART_PORT")
 	if smartHost != "" {
 		return e.SendSmarthost(
 			smartHost,

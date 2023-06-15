@@ -1,3 +1,5 @@
+github.com/OfimaticSRL/parsemail v0.0.0-20230321032643-37a2f96e6589 h1:eX/Kz/VwetbRXZ7Q4fuVLSol/uTuGEmofFpyCs9jpSE=
+github.com/OfimaticSRL/parsemail v0.0.0-20230321032643-37a2f96e6589/go.mod h1:MeyUFKQUXa5bD0bfy+wf3eMotz8NdY/VxXYOQkUuHFg=
 github.com/ProtonMail/go-crypto v0.0.0-20230321155629-9a39f2531310 h1:dGAdTcqheKrQ/TW76sAcmO2IorwXplUw2inPkOzykbw=
 github.com/ProtonMail/go-crypto v0.0.0-20230321155629-9a39f2531310/go.mod h1:8TI4H3IbrackdNgv+92dI+rhpCaLqM0IfpgCgenFvRE=
 github.com/ProtonMail/go-mime v0.0.0-20230322103455-7d82a3887f2f h1:tCbYj7/299ekTTXpdwKYF8eBlsYsDVoggDAuAjoK66k=

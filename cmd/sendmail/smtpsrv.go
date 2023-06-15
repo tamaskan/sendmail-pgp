@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+
+	"os"
 	"strings"
 	"time"
 
+	parsemail "github.com/OfimaticSRL/parsemail"
 	smtp "github.com/emersion/go-smtp"
 	"github.com/n0madic/sendmail"
 	log "github.com/sirupsen/logrus"
@@ -53,9 +56,49 @@ func (s *Session) Data(r io.Reader) error {
 	if err != nil {
 		return err
 	}
+	
+
+	if (strings.Count(strings.Join(s.To,""), "@") > 1){
+		log.Fatal("Multiple Recipients detected")
+		log.Debug(strings.Join(s.To,""))
+	}
+
+	var pgprecipients = string(s.To[0])
+
+	var stringhash = hasher(pgprecipients)
+
+	email, err := parsemail.Parse(r) 
+	if err != nil {
+		log.Fatal("ohoh")
+	}
+	
+	fmt.Println(email.Subject)
+	fmt.Println(email.HTMLBody)
+
+	pgpdata, err := os.ReadFile("/keys/"+stringhash+".pgp")
+	
+	if os.IsNotExist(err) {
+		log.Debug("no /keys/"+stringhash+".pgp found, skipping encryption")
+	} else {
+		subject = "..."
+		configdata, err := ioutil.ReadFile("/keys/"+stringhash+".config")
+		if os.IsNotExist(err) {
+			log.Debug("Config file /keys/"+stringhash+".config not found, encrypting everything")
+			body = encrypter(pgpdata,[]byte(body))
+		}else{
+			if strings.Contains(string(configdata), email.Subject){
+				
+				var corepgp = string(encrypter(pgpdata,[]byte(body)))
+				body = encrypter(pgpdata,[]byte(corepgp))
+
+			}
+		}
+	}
+
 	envelope, err := sendmail.NewEnvelope(&sendmail.Config{
 		Sender:     s.From,
 		Recipients: s.To,
+		Subject:    subject,
 		Body:       body,
 	})
 	if err != nil {

@@ -22,10 +22,35 @@ func generateMessageID(domain string) string {
 }
 
 // GetDumbMessage create simple mail.Message from raw data
-func GetDumbMessage(sender string, recipients []string, body []byte) (*mail.Message, error) {
+func GetDumbMessage(sender string, recipients []string,subject string, body []byte) (*mail.Message, error) {
 	if len(recipients) == 0 {
 		return nil, errors.New("empty recipients list")
 	}
+	
+	if(subject == "..."){
+		print("... found, switching to multipart\r\n")
+		buf := bytes.NewBuffer(nil)
+		buf.WriteString(`Content-Type: multipart/encrypted; boundary="ca4"; protocol="application/pgp-encrypted"\r\n`)
+		buf.WriteString("From: " + sender + "\r\n")
+		buf.WriteString("To: " + strings.Join(recipients, ",") + "\r\n")
+		buf.WriteString("Subject: ...\r\n")
+		buf.WriteString("\r\n")
+		buf.WriteString("--ca4\r\n")
+		buf.WriteString("content-type: application/pgp-encrypted\r\n")
+		buf.WriteString("\r\n")
+		buf.WriteString("Version: 1\r\n")
+		buf.WriteString("\r\n")
+		buf.WriteString("--ca4\r\n")
+		buf.WriteString("content-type: application/octet-stream\r\n")
+		buf.WriteString("\r\n")
+		buf.Write(body)
+		buf.WriteString("\r\n")
+		buf.WriteString("\r\n")
+		buf.WriteString("--ca4--\r\n")
+	return mail.ReadMessage(buf)
+
+	}
+
 	buf := bytes.NewBuffer(nil)
 	if sender != "" {
 		buf.WriteString("From: " + sender + "\r\n")
