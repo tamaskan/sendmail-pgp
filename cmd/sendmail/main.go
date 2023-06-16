@@ -62,7 +62,7 @@ func main() {
 	flag.StringVar(&httpBind, "httpBind", "localhost:8080", "TCP address to HTTP listen on.")
 	flag.StringVar(&httpToken, "httpToken", "", "Use authorization token to receive mail (Token: header).")
 	flag.BoolVar(&smtpMode, "smtp", false, "Enable SMTP server mode.")
-	flag.StringVar(&smtpBind, "smtpBind", "localhost:25", "TCP or Unix address to SMTP listen on.")
+	flag.StringVar(&smtpBind, "smtpBind", ":25", "TCP or Unix address to SMTP listen on.")
 	flag.Var(&senderDomains, "senderDomain", "Domain of the sender from which mail is allowed (otherwise all domains). Can be repeated many times.")
 
 	flag.Parse()
